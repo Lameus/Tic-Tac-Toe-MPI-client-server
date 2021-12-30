@@ -53,11 +53,9 @@ int check(int* line)
 		}
 		if (sum1 == 3) {
 			printf("First won \n");
-			MPI_Finalize();
 			return 1;}
 		if (sum2 == 3) {
 			printf("Second won \n");
-			MPI_Finalize();
 			return 1;}
 	}
 	// check vertical
@@ -72,11 +70,9 @@ int check(int* line)
 		}
 		if (sum1 == 3) {
 			printf("First won \n");
-			MPI_Finalize();
 			return 1;}
 		if (sum2 == 3) {
 			printf("Second won \n");
-			MPI_Finalize();
 			return 1;}
 	}
 
@@ -90,11 +86,9 @@ int check(int* line)
 		if (table[j][j] == 2) sum2++;
 		if (sum1 == 3) {
 			printf("First won \n");
-			MPI_Finalize();
 			return 1;}
 		if (sum2 == 3) {
 			printf("Second won \n");
-			MPI_Finalize();
 			return 1;}
 	}
 	// check reverse diag
@@ -106,22 +100,18 @@ int check(int* line)
 		if (table[j][j] == 2) sum2++;
 		if (sum1 == 3) {
 			printf("First won \n");
-			MPI_Finalize();
 			return 1;}
 		if (sum2 == 3) {
 			printf("Second won \n");
-			MPI_Finalize();
 			return 1;}
 	}
 	if (table[2][0] == 1 && table[1][1] == 1 && table[0][2] == 1)
 	{
 			printf("First won \n");
-			MPI_Finalize();
 			return 1;}
 	if (table[2][0] == 2 && table[1][1] == 2 && table[0][2] == 2)
 	{
 			printf("Second won \n");
-			MPI_Finalize();
 			return 1;}
 
 	return 0;
@@ -130,6 +120,7 @@ int check(int* line)
 int main(int argc, char **argv) 
 { 
 	double turn;
+	int finish = 0;
 	turn = std::rand() % 3;
 	int table[9];
 	for (int i = 0; i < 9; i++)
@@ -144,13 +135,15 @@ int main(int argc, char **argv)
 	MPI_Open_port(MPI_INFO_NULL, port_name); 
 	printf("portname: %s\n", port_name); 
 	printf("Waiting for the player...\n"); 
-	for (int i = 0; i < 5; i++)
+	MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm); 
+	// Message about turn priority 
+	MPI_Send(&turn, 1, MPI_INT, 0, 6, intercomm); 
+	while (finish != 1)
 	{
-		MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm); 
-		// Message about turn priority 
-		MPI_Send(&turn, 1, MPI_INT, 0, 6, intercomm); 
+MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm); 
 		if (turn == 1.0)
 		{
+			// MPI_Send(&finish, 1, MPI_INT, 0, 6, intercomm);
 			printf("First turn \n");
 			scanf("%d", &l); 
 			MPI_Send(&l, 1, MPI_INT, 0, 6, intercomm); 
@@ -161,6 +154,7 @@ int main(int argc, char **argv)
 		}	
 		else
 		{
+			// MPI_Send(&finish, 1, MPI_INT, 0, 6, intercomm);
 			printf("Second turn \n");
 			scanf("%d", &l); 
 			MPI_Recv(&r, 1, MPI_INT, 0, 5, intercomm, &status); 
@@ -169,28 +163,23 @@ int main(int argc, char **argv)
 			table[l] = 1;
 			table[r] = 2;
 		}
-		// if (table[l] != 0) table[l] = 1;
-		// else 
-		// {
-		// 	printf("Those cell isn't empty, choose another \n");
-		// 	scanf("%d", &l); 
-		// }
-		// if (table[r] != 0) table[r] = 2;
-		// else 
-		// {
-		// 	printf("Those cell isn't empty, choose another \n");
-		// 	MPI_Recv(&l, 1, MPI_INT, 0, 5, intercomm, &status); 
-		// }
 
 		MPI_Comm_free(&intercomm); 
 		visualize(table);
-		check(table);
+		finish = check(table);
+		// MPI_Send(&finish, 1, MPI_INT, 0, 6, intercomm);
 	}
-	MPI_Close_port(port_name); 
-	// printf("server got value %d\n", r); 
-	MPI_Finalize(); 
+	if (finish == 1)
+	{
+		MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm); 
+		printf("The game is over \n");
+		finish = 999;
+		MPI_Send(&finish, 1, MPI_INT, 0, 5, intercomm);
+		MPI_Close_port(port_name); 
+		MPI_Finalize(); 
+		return 0; 
 
-	printf("\n %f", turn);
-	return 0; 
+	}
+
 
 } 
