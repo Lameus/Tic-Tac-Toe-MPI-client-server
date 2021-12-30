@@ -9,5 +9,5 @@ If one of players achives win's rule - prints information about it and MPI proce
 
 ### Run example:
 
-![image](https://user-images.githubusercontent.com/34346831/147711886-dcd7b815-527b-48aa-9f01-c6dcf1f08224.png)
+![image](https://user-images.githubusercontent.com/34346831/147761337-355fbed4-a3c9-49ab-b635-3ae0a479d6ad.png)
 
